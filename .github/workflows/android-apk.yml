@@ -103,5 +103,50 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-      - name: Submit preview APK build
-        run: eas build --platform android --profile preview --non-interactive --no-wait
+      - name: Build preview APK and wait for completion
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          eas build --platform android --profile preview --non-interactive --json > artifacts/eas-build.json
+      - name: Download generated APK
+        shell: bash
+        run: |
+          APK_URL=$(node <<'NODE'
+          const fs = require('fs');
+          const payload = JSON.parse(fs.readFileSync('artifacts/eas-build.json', 'utf8'));
+          const urls = [];
+          const visit = (value) => {
+            if (!value || typeof value !== 'object') return;
+            if (Array.isArray(value)) return value.forEach(visit);
+            for (const [key, child] of Object.entries(value)) {
+              if (typeof child === 'string' && /(?:buildUrl|applicationArchiveUrl)$/i.test(key) && /\\.apk(?:[?#].*)?$/i.test(child)) urls.push(child);
+              else visit(child);
+            }
+          };
+          visit(payload);
+          if (!urls[0]) {
+            console.error('EAS completed without an APK URL. Inspect artifacts/eas-build.json.');
+            process.exit(1);
+          }
+          process.stdout.write(urls[0]);
+          NODE
+          )
+          echo "APK URL found; downloading artifact."
+          curl --fail --location --retry 3 --retry-delay 2 "$APK_URL" -o artifacts/AR-Measure-preview.apk
+          test -s artifacts/AR-Measure-preview.apk
+      - name: Upload APK artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ar-measure-preview-apk
+          path: artifacts/AR-Measure-preview.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload EAS build metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ar-measure-eas-build-metadata
+          path: artifacts/eas-build.json
+          if-no-files-found: warn
+          retention-days: 14
