@@ -103,9 +103,5 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-      - name: Link or initialize EAS project
-        shell: bash
-        run: |
-          eas init --account aviskancil92-code --non-interactive
       - name: Submit preview APK build
         run: eas build --platform android --profile preview --non-interactive --no-wait
