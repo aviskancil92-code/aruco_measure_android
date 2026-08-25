@@ -30,6 +30,7 @@ const env = {
   // App branding - update these values directly (do not use env vars)
   appName: "AR Measure",
   appSlug: "aruco_measure_android",
+  owner: "aviskancil92-code",
   // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
   // Leave empty to use the default icon from assets/images/icon.png
   logoUrl: "/manus-storage/ar-measure-icon_af62ec07.png",
@@ -41,6 +42,7 @@ const env = {
 const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
+  owner: env.owner,
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
