@@ -98,10 +98,14 @@ jobs:
             exit 1
           fi
           echo "EXPO_TOKEN is present; value is never printed."
-      - name: Build APK with EAS
+      - name: Setup EAS CLI
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+      - name: Link or initialize EAS project
+        shell: bash
+        run: |
+          eas init --account aviskancil92-code --non-interactive
       - name: Submit preview APK build
         run: eas build --platform android --profile preview --non-interactive --no-wait
