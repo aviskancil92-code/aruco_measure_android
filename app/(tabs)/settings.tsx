@@ -1,0 +1,19 @@
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { ScreenContainer } from "@/components/screen-container";
+import { useColors } from "@/hooks/use-colors";
+
+export default function SettingsScreen() {
+  const colors = useColors();
+  const [perspective, setPerspective] = useState(true);
+  const [calibration, setCalibration] = useState(false);
+  const [fps, setFps] = useState(20);
+  return <ScreenContainer className="p-5"><ScrollView contentContainerStyle={styles.content}>
+    <Text style={[styles.kicker, { color: colors.primary }]}>SETTINGS</Text><Text style={[styles.title, { color: colors.foreground }]}>Tune your setup.</Text>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.section, { color: colors.foreground }]}>Reference marker</Text><Text style={[styles.label, { color: colors.muted }]}>Physical size</Text><View style={[styles.value, { borderColor: colors.border }]}><Text style={[styles.valueText, { color: colors.foreground }]}>5.0 cm</Text><Text style={[styles.valueUnit, { color: colors.muted }]}>ArUco</Text></View></View>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.section, { color: colors.foreground }]}>Processing</Text><Row title="Perspective correction" copy="Homography for flat objects" value={perspective} onValueChange={setPerspective} colors={colors} /><Row title="Camera calibration" copy="Apply matrix and lens coefficients" value={calibration} onValueChange={setCalibration} colors={colors} /><Text style={[styles.label, { color: colors.muted, marginTop: 12 }]}>Processing rate</Text><View style={styles.fpsRow}>{[15, 20, 30].map((item) => <Pressable key={item} onPress={() => setFps(item)} style={[styles.fpsButton, { borderColor: item === fps ? colors.primary : colors.border, backgroundColor: item === fps ? '#173447' : 'transparent' }]}><Text style={{ color: item === fps ? colors.primary : colors.foreground, fontWeight: '800' }}>{item} FPS</Text></Pressable>)}</View></View>
+    <Text style={[styles.foot, { color: colors.muted }]}>Calibration is optional. For a production Python/Kivy build, store the camera matrix and distortion coefficients from a chessboard calibration session.</Text>
+  </ScrollView></ScreenContainer>;
+}
+function Row({ title, copy, value, onValueChange, colors }: { title: string; copy: string; value: boolean; onValueChange: (value: boolean) => void; colors: any }) { return <View style={[styles.row, { borderTopColor: colors.border }]}><View style={styles.rowCopy}><Text style={[styles.rowTitle, { color: colors.foreground }]}>{title}</Text><Text style={[styles.rowSub, { color: colors.muted }]}>{copy}</Text></View><Switch value={value} onValueChange={onValueChange} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#F7F8FC" /></View>; }
+const styles = StyleSheet.create({ content: { gap: 14, paddingBottom: 30 }, kicker: { fontSize: 12, fontWeight: '800', letterSpacing: 2 }, title: { fontSize: 28, lineHeight: 34, fontWeight: '800', marginBottom: 6 }, card: { borderRadius: 20, borderWidth: 1, padding: 17, gap: 12 }, section: { fontSize: 16, fontWeight: '800' }, label: { fontSize: 12, fontWeight: '700' }, value: { borderWidth: 1, borderRadius: 12, padding: 13, flexDirection: 'row', justifyContent: 'space-between' }, valueText: { fontSize: 16, fontWeight: '700' }, valueUnit: { fontSize: 13 }, row: { borderTopWidth: 1, paddingTop: 13, marginTop: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, rowCopy: { gap: 3, flex: 1 }, rowTitle: { fontSize: 14, fontWeight: '700' }, rowSub: { fontSize: 12 }, fpsRow: { flexDirection: 'row', gap: 8 }, fpsButton: { borderWidth: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 11 }, foot: { textAlign: 'center', fontSize: 12, lineHeight: 18, padding: 5 } });
