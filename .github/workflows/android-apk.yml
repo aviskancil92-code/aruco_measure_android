@@ -25,15 +25,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+      - name: Verify toolchain
+        run: pnpm --version
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: TypeScript
@@ -43,22 +45,22 @@ jobs:
       - name: Unit tests
         run: pnpm test -- --reporter=verbose
       - name: Expo doctor
-        run: pnpm exec expo-doctor
+        run: pnpm doctor
       - name: Production dependency audit report
         shell: bash
         run: |
-          set +e
-          pnpm audit --prod --json > audit-report.json
-          audit_exit=$?
-          echo "pnpm audit exit code: ${audit_exit}"
-          test -s audit-report.json
-          exit 0
+          mkdir -p reports
+          pnpm audit --prod --json > reports/audit-report.json 2> reports/audit-stderr.log || true
+          if [ ! -s reports/audit-report.json ]; then
+            printf '%s\n' '{"audit_status":"unavailable","message":"pnpm audit did not return JSON; inspect audit-stderr.log"}' > reports/audit-report.json
+          fi
+          test -s reports/audit-report.json
       - name: Upload dependency audit report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dependency-audit-report
-          path: audit-report.json
+          path: reports/
           if-no-files-found: error
 
   build-apk:
@@ -73,15 +75,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+      - name: Verify toolchain
+        run: pnpm --version
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build APK with EAS
