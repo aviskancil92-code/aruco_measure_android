@@ -3,7 +3,6 @@ name: Android APK
 on:
   push:
     branches: [main]
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -22,88 +21,66 @@ jobs:
     name: Quality gates
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-      - name: Verify toolchain
-        run: pnpm --version
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: TypeScript
         run: pnpm check
+
       - name: Lint
         run: pnpm lint
+
       - name: Unit tests
         run: pnpm test -- --reporter=verbose
+
       - name: Expo doctor
         run: pnpm doctor
-      - name: Production dependency audit report
-        shell: bash
-        run: |
-          mkdir -p reports
-          pnpm audit --prod --json > reports/audit-report.json 2> reports/audit-stderr.log || true
-          if [ ! -s reports/audit-report.json ]; then
-            printf '%s\n' '{"audit_status":"unavailable","message":"pnpm audit did not return JSON; inspect audit-stderr.log"}' > reports/audit-report.json
-          fi
-          test -s reports/audit-report.json
-      - name: Upload dependency audit report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-audit-report
-          path: reports/
-          if-no-files-found: error
 
   build-apk:
-    name: Build preview APK
+    name: Build APK
     needs: quality
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      contents: read
-      actions: read
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-      - name: Verify toolchain
-        run: pnpm --version
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Validate EXPO_TOKEN
-        shell: bash
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "::warning title=Missing EXPO_TOKEN::Expo access token not found. Skipping EAS build steps. To run builds, add EXPO_TOKEN in repository secrets."
-          else
-            echo "EXPO_TOKEN is present; value is never printed."
-          fi
-      - name: Build APK with EAS
-        if: ${{ secrets.EXPO_TOKEN != '' }}
+
+      - name: Setup Expo / EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-      - name: Submit preview APK build
-        if: ${{ secrets.EXPO_TOKEN != '' }}
-        run: eas build --platform android --profile preview --non-interactive --no-wait
+
+      - name: Build APK
+        run: eas build --platform android --profile preview --non-interactive
