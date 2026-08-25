@@ -88,6 +88,16 @@ jobs:
         run: pnpm --version
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Validate EXPO_TOKEN
+        shell: bash
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error title=Missing EXPO_TOKEN::Add an Expo access token at GitHub Settings > Secrets and variables > Actions > New repository secret, using the name EXPO_TOKEN."
+            exit 1
+          fi
+          echo "EXPO_TOKEN is present; value is never printed."
       - name: Build APK with EAS
         uses: expo/expo-github-action@v8
         with:
